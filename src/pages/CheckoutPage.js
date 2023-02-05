@@ -1,32 +1,64 @@
-import { loadScript } from "@paypal/paypal-js";
+import {useState, useEffect, useRef} from 'react'
 
-let paypal;
+  export default function CheckoutPage(){
+    
+const [paid, setPaid] = useState(false);
+const [error, setError] = useState(null);
 
-try {
-    paypal = await loadScript({ "client-id": "test" });
-} catch (error) {
-    console.error("failed to load the PayPal JS SDK script", error);
-}
+const paypalRef = useRef();
 
-if (paypal) {
-    try {
-        await paypal.Buttons().render("#your-container-element");
-    } catch (error) {
-        console.error("failed to render the PayPal Buttons", error);
-    }
-}
+useEffect(() => {
+    window.paypal
+      .Buttons({
+        createOrder: (data, actions) => {
+          return actions.order.create({
+            intent: "CAPTURE",
+            purchase_units: [
+              {
+                description: "Your description",
+                amount: {
+                  currency_code: "INR",
+                  value: 500.0,
+                },
+              },
+            ],
+          });
+        },
+        onApprove: async (data, actions) => {
+          const order = await actions.order.capture();
+          setPaid(true);
+          console.log(order);
+        },
+        onError: (err) => {
+        //   setError(err),
+          console.error(err);
+        },
+      })
+      .render(paypalRef.current);
+  }, []);
 
-paypal.Buttons({
-    style: {
-      layout: 'vertical',
-      color:  'blue',
-      shape:  'rect',
-      label:  'paypal'
-    }
-  }).render('#paypal-button-container');
+  if (paid) {
+    return <div>Payment successful.!</div>;
+  }
 
+  // If any error occurs
+  if (error) {
+    return <div>Error Occurred in processing payment.! Please try again.</div>;
+  }
 
-export default function CheckoutPage(){
+  /*{(checkout === true) 
+    ? <div className="payment-div">
+      <ReactPayPal 
+        total={500}
+      />
+    </div> 
+  
+    :<div>
+      <h1>React-PayPal</h1>
+      <button onClick={() => {setCheckout(true)}} className="checkout-button">Checkout</button>
+    </div>
+  }*/
+
     return(
         <div>
             This is a holder for CheckoutPage.js navigation.   
